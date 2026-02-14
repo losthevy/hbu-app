@@ -1,0 +1,419 @@
+import React, { useState, useEffect } from 'react';
+import { 
+  LayoutDashboard, BookOpen, Store, BrainCircuit, MessageSquare, 
+  TrendingUp, Award, Map as MapIcon, Search, Bell, User, 
+  ChevronRight, PieChart, FileText, Zap, Star, Trophy, Target, 
+  Flame, CheckCircle2, Info, Maximize2, MapPin, Calendar, 
+  ShieldCheck, Home, Send, MoreVertical, Phone, Video, 
+  ShoppingBag, Utensils, ShoppingBasket, ArrowLeft, Plus, Minus,
+  Activity, BarChart3, Clock, GraduationCap, Banknote, Landmark,
+  ArrowUpRight, Wallet, History, CreditCard, Scale, DollarSign
+} from 'lucide-react';
+
+const App = () => {
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [isAiLoading, setIsAiLoading] = useState(false);
+  const [xp, setXp] = useState(1240);
+  const [selectedUnit, setSelectedUnit] = useState(null);
+  const [selectedKiosk, setSelectedKiosk] = useState(null);
+  const [showOrderSuccess, setShowOrderSuccess] = useState(false);
+  
+  const [messages, setMessages] = useState([
+    { role: 'ai', text: 'Halo John! Saya AI HBU. Berdasarkan data transaksi QRIS Anda, omzet Anda bulan ini stabil. Jangan lupa optimalkan laporan PPh Final 0,5% sebelum akhir bulan.' }
+  ]);
+
+  // --- DATA MOCK (Dipastikan ada di dalam scope App agar tidak ReferenceError) ---
+  
+  const marketplaces = [
+    { 
+      id: 1, 
+      name: 'Kopi Kenangan Rakyat', 
+      category: 'Minuman', 
+      location: 'Blok A-01', 
+      rating: 4.8, 
+      image: '☕', 
+      products: [{ id: 101, name: 'Kopi Susu Gula Aren', price: 18000, desc: 'Kopi pilihan dengan susu segar.' }] 
+    },
+    { 
+      id: 2, 
+      name: 'Warung Nasi Ibu Mien', 
+      category: 'Makanan', 
+      location: 'Blok B-05', 
+      rating: 4.9, 
+      image: '🍲', 
+      products: [{ id: 201, name: 'Nasi Rames Spesial', price: 25000, desc: 'Nasi dengan 3 macam lauk.' }] 
+    },
+  ];
+
+  const recentTransactions = [
+    { id: 1, item: 'Kopi Susu Gula Aren', type: 'QRIS', amount: 18000, date: 'Hari ini, 14:20', status: 'Success' },
+    { id: 2, item: 'Roti Bakar Cokelat', type: 'Cash', amount: 12000, date: 'Hari ini, 13:45', status: 'Success' },
+    { id: 3, item: 'Nasi Rames Spesial', type: 'QRIS', amount: 25000, date: 'Hari ini, 12:30', status: 'Success' },
+  ];
+
+  const kioskUnits = Array.from({ length: 20 }, (_, i) => ({
+    id: i + 1,
+    code: `K-${String(i + 1).padStart(2, '0')}`,
+    status: i % 7 === 0 ? 'Occupied' : i % 5 === 0 ? 'High Traffic' : 'Available',
+    basePrice: 1500000 + (i * 50000),
+    serviceFee: 150000,
+    size: '3x3m',
+    heat: Math.floor(Math.random() * 100)
+  }));
+
+  const dailyMissions = [
+    { id: 1, task: 'Verifikasi 5 transaksi QRIS', xp: 50, completed: true },
+    { id: 2, task: 'Baca modul insentif pajak 2024', xp: 100, completed: false },
+    { id: 3, task: 'Cek heatmap lokasi strategis', xp: 30, completed: false },
+  ];
+
+  const literacyModules = [
+    { id: 1, title: 'Optimalisasi PPh Final 0.5%', category: 'Perpajakan', level: 'Pemula', xp: '+150', progress: 85, icon: Scale },
+    { id: 2, title: 'Strategi Modal KUR Digital', category: 'Finansial', level: 'Menengah', xp: '+200', progress: 0, icon: Landmark },
+    { id: 3, title: 'Manajemen Arus Kas Mikro', category: 'Finansial', level: 'Pemula', xp: '+120', progress: 40, icon: Wallet },
+    { id: 4, title: 'Kepatuhan Era UU HPP', category: 'Perpajakan', level: 'Ahli', xp: '+500', progress: 0, icon: ShieldCheck },
+  ];
+
+  const [selectedContact, setSelectedContact] = useState(null);
+  const [chatInput, setChatInput] = useState("");
+  const [chatHistory, setChatHistory] = useState({
+    1: [{ id: 1, sender: 'them', text: 'Halo! Ada kendala dengan sistem pembayaran di unit K-12?', time: '09:41' }]
+  });
+
+  const contacts = [
+    { id: 1, name: 'Bpk. Ahmad (Admin Aset)', role: 'Admin HBU', status: 'online', avatar: 'BA' },
+    { id: 2, name: 'Sari Wijaya (Mentor)', role: 'Pajak & Keuangan', status: 'offline', avatar: 'SW' },
+  ];
+
+  // --- Handlers ---
+
+  const handleSendMessage = () => {
+    if (!chatInput.trim() || !selectedContact) return;
+    const newMessage = { id: Date.now(), sender: 'me', text: chatInput, time: 'Baru saja' };
+    setChatHistory(prev => ({ ...prev, [selectedContact.id]: [...(prev[selectedContact.id] || []), newMessage] }));
+    setChatInput("");
+  };
+
+  const handlePlaceOrder = () => {
+    setShowOrderSuccess(true);
+    setXp(p => p + 15);
+    setTimeout(() => setShowOrderSuccess(false), 3000);
+  };
+
+  const SidebarItem = ({ id, icon: Icon, label }) => (
+    <button
+      onClick={() => { setActiveTab(id); setSelectedKiosk(null); setSelectedUnit(null); }}
+      className={`w-full flex items-center space-x-3 p-4 transition-all duration-300 relative group ${
+        activeTab === id 
+        ? `bg-[#FFCC00] text-[#003366] font-bold border-r-4 border-[#003366]` 
+        : `text-white/70 hover:bg-[#004080] hover:text-white`
+      }`}
+    >
+      <Icon size={18} className={`${activeTab === id ? 'scale-110' : 'group-hover:translate-x-1'}`} />
+      <span className="text-[13px] tracking-tight">{label}</span>
+    </button>
+  );
+
+  return (
+    <div className="flex h-screen bg-[#F8FAFC] text-slate-700 overflow-hidden" style={{ fontFamily: "'Inter', sans-serif" }}>
+      <style>
+        {`
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap');
+          body { font-family: 'Inter', sans-serif; -webkit-font-smoothing: antialiased; }
+          .glass { background: rgba(255, 255, 255, 0.8); backdrop-filter: blur(10px); }
+          @keyframes slideUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+          .animate-slide-up { animation: slideUp 0.4s ease-out forwards; }
+          .custom-scrollbar::-webkit-scrollbar { width: 4px; }
+          .custom-scrollbar::-webkit-scrollbar-thumb { background: #E2E8F0; border-radius: 10px; }
+          @keyframes float { 0%, 100% { transform: translateY(0px); } 50% { transform: translateY(-10px); } }
+          .animate-float { animation: float 5s ease-in-out infinite; }
+        `}
+      </style>
+
+      {/* Sidebar Navigation */}
+      <aside className="w-64 bg-[#003366] flex flex-col shadow-2xl z-30">
+        <div className="p-8">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 bg-[#FFCC00] rounded-2xl flex items-center justify-center shadow-xl shadow-yellow-500/20">
+              <span className="text-[#003366] font-black text-xl italic">H</span>
+            </div>
+            <div>
+              <h1 className="text-white font-bold text-lg tracking-tight">HBU <span className="font-light text-blue-300 italic">Eco</span></h1>
+              <p className="text-[9px] text-blue-400 font-bold uppercase tracking-widest leading-none">Kemenkeu RI</p>
+            </div>
+          </div>
+        </div>
+        
+        <nav className="flex-1 px-2 space-y-1">
+          <SidebarItem id="dashboard" icon={LayoutDashboard} label="Dashboard" />
+          <SidebarItem id="hub" icon={Store} label="The Hub" />
+          <SidebarItem id="marketplace" icon={ShoppingBag} label="Kios Online" />
+          <SidebarItem id="academy" icon={GraduationCap} label="Literasi Pajak & Modal" />
+          <SidebarItem id="brain" icon={BrainCircuit} label="The Brain (AI)" />
+          <SidebarItem id="messages" icon={MessageSquare} label="Pesan & Konsultasi" />
+        </nav>
+
+        <div className="p-6">
+          <div className="bg-white/5 p-5 rounded-[24px] border border-white/10 group hover:bg-white/10 transition-all cursor-default">
+            <div className="flex items-center space-x-3 mb-3">
+              <div className="w-10 h-10 rounded-xl bg-[#FFCC00] flex items-center justify-center text-[#003366] font-bold border-2 border-white/20">JD</div>
+              <div className="overflow-hidden">
+                <p className="text-xs font-bold text-white italic">John Doe</p>
+                <p className="text-[9px] text-blue-300 font-medium tracking-tight">Level 4 Business Pro</p>
+              </div>
+            </div>
+            <div className="w-full bg-white/10 h-1.5 rounded-full overflow-hidden">
+              <div className="bg-[#FFCC00] h-full" style={{ width: '65%' }}></div>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      {/* Main Container */}
+      <main className="flex-1 flex flex-col overflow-hidden relative">
+        <header className="bg-white/90 glass border-b px-10 py-5 flex justify-between items-center z-20 shadow-sm">
+          <div className="flex items-center bg-slate-50 px-5 py-2.5 rounded-2xl w-96 border border-slate-200 focus-within:border-blue-500 focus-within:bg-white transition-all shadow-inner">
+            <Search size={16} className="text-slate-400" />
+            <input type="text" placeholder="Cari layanan..." className="bg-transparent border-none outline-none ml-3 text-sm w-full font-medium" />
+          </div>
+          <div className="flex items-center space-x-6">
+            <div className="flex items-center gap-2 text-orange-600 bg-orange-50 px-4 py-1.5 rounded-full border border-orange-100 hover:scale-105 transition-all cursor-default">
+              <Flame size={16} className="animate-pulse" />
+              <span className="text-[10px] font-black uppercase tracking-widest">7 Hari Streak</span>
+            </div>
+            <div className="h-8 w-px bg-slate-200"></div>
+            <div className="flex items-center gap-4 text-[#003366]">
+               <div className="text-right hidden sm:block">
+                  <p className="text-[10px] font-black text-slate-400 uppercase leading-none">Poin XP</p>
+                  <p className="text-sm font-black leading-tight tracking-tighter">{xp.toLocaleString()}</p>
+               </div>
+               <div className="w-11 h-11 rounded-2xl bg-[#003366]/5 flex items-center justify-center font-bold text-xs shadow-inner">JD</div>
+            </div>
+          </div>
+        </header>
+
+        <section className="flex-1 overflow-y-auto p-10 custom-scrollbar relative bg-[#F8FAFC]">
+          
+          {showOrderSuccess && (
+            <div className="fixed top-24 right-10 bg-[#003366] text-white px-6 py-4 rounded-2xl shadow-2xl z-50 flex items-center gap-4 animate-slide-up border border-[#FFCC00]/30">
+              <div className="bg-[#FFCC00] p-2 rounded-lg"><CheckCircle2 size={20} className="text-[#003366]" /></div>
+              <div>
+                <p className="font-bold text-sm uppercase italic tracking-tighter">Aksi Berhasil!</p>
+                <p className="text-[10px] text-blue-200">Data telah diperbarui di ekosistem HBU.</p>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'dashboard' && (
+            <div className="space-y-10 animate-slide-up">
+              <div className="bg-[#003366] rounded-[48px] p-10 text-white relative overflow-hidden shadow-2xl border border-white/10 group">
+                <div className="relative z-10 space-y-10">
+                  <div className="bg-[#FFCC00] text-[#003366] text-[10px] font-black px-5 py-2 rounded-full w-fit uppercase tracking-[0.2em] shadow-lg italic">Statistik Performa</div>
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-5xl">
+                    <div className="space-y-3 border-l-4 border-[#FFCC00] pl-8">
+                       <p className="text-[11px] font-bold text-blue-200 uppercase tracking-widest opacity-80">Omzet</p>
+                       <h2 className="text-4xl font-black tracking-tighter italic drop-shadow-sm">Rp 42.850k</h2>
+                       <div className="flex items-center gap-2 text-green-400 text-xs font-bold"><TrendingUp size={14} /> +12.4%</div>
+                    </div>
+                    <div className="space-y-3 border-l-4 border-white/10 pl-8">
+                       <p className="text-[11px] font-bold text-blue-200 uppercase tracking-widest opacity-80">Penetrasi QRIS</p>
+                       <h2 className="text-4xl font-black tracking-tighter italic opacity-90">82.5%</h2>
+                       <p className="text-[10px] text-[#FFCC00] font-black uppercase tracking-tighter">Sangat Baik</p>
+                    </div>
+                    <div className="space-y-3 border-l-4 border-white/10 pl-8">
+                       <p className="text-[11px] font-bold text-blue-200 uppercase tracking-widest opacity-80">Pajak (Est)</p>
+                       <h2 className="text-4xl font-black tracking-tighter italic opacity-90">Rp 214k</h2>
+                       <p className="text-[9px] font-black text-white underline uppercase cursor-pointer" onClick={() => setActiveTab('brain')}>Detail Analisis</p>
+                    </div>
+                  </div>
+                </div>
+                <Activity size={350} className="absolute -right-24 -bottom-24 text-white/5 rotate-12 group-hover:scale-110 transition-transform duration-[4s] animate-float opacity-40 pointer-events-none" />
+              </div>
+
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                <div className="lg:col-span-8 bg-white rounded-[40px] p-8 border border-slate-100 shadow-xl">
+                  <div className="flex justify-between items-center mb-10">
+                    <h3 className="font-black text-[#003366] text-2xl tracking-tighter uppercase italic">Riwayat Pembayaran</h3>
+                    <button className="flex items-center gap-3 bg-slate-50 px-5 py-2.5 rounded-2xl text-[10px] font-black text-[#003366] border border-slate-100 uppercase tracking-widest">
+                      <History size={16} /> Laporan
+                    </button>
+                  </div>
+                  <div className="overflow-hidden rounded-[24px] border border-slate-100">
+                    <table className="w-full text-left">
+                       <thead>
+                         <tr className="bg-slate-50/80"><th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Item</th><th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest">Metode</th><th className="p-5 text-[10px] font-black text-slate-400 uppercase tracking-widest text-right">Jumlah</th></tr>
+                       </thead>
+                       <tbody className="divide-y divide-slate-50">
+                         {recentTransactions.map(tx => (
+                           <tr key={tx.id} className="hover:bg-slate-50/50 transition-colors">
+                             <td className="p-5 text-[13px] font-bold text-slate-700 italic">{tx.item}</td>
+                             <td className="p-5"><span className="text-[10px] font-black px-3 py-1 rounded-full uppercase bg-blue-100 text-blue-600">{tx.type}</span></td>
+                             <td className="p-5 text-right font-black text-[#003366]">Rp {tx.amount.toLocaleString()}</td>
+                           </tr>
+                         ))}
+                       </tbody>
+                    </table>
+                  </div>
+                </div>
+
+                <div className="lg:col-span-4 space-y-8">
+                  <div className="bg-white rounded-[40px] p-8 border border-slate-100 shadow-xl group hover:shadow-2xl transition-all">
+                    <h3 className="font-black text-[#003366] text-xl tracking-tighter uppercase italic mb-8">The Hub</h3>
+                    <div className="bg-slate-50 rounded-3xl p-6 border-2 border-dashed border-slate-200 text-center">
+                      <Store size={32} className="mx-auto text-slate-300 mb-4" />
+                      <p className="text-[10px] font-black uppercase tracking-widest text-green-600 mb-6">Unit K-12 AKTIF</p>
+                      <button onClick={() => setActiveTab('hub')} className="w-full py-3 bg-[#003366] text-white text-[10px] font-black rounded-xl uppercase hover:bg-black transition-all active:scale-95">Kelola Aset</button>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'hub' && (
+            <div className="space-y-10 animate-slide-up">
+              <h2 className="text-3xl font-black text-[#003366] tracking-tighter uppercase italic">The Hub</h2>
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-10">
+                <div className="lg:col-span-8 bg-white p-10 rounded-[48px] border border-slate-100 shadow-xl relative overflow-hidden group">
+                  <div className="grid grid-cols-4 sm:grid-cols-5 gap-6 p-10 bg-slate-100 border-4 border-white rounded-[56px] shadow-inner relative">
+                    {kioskUnits.map((unit) => (
+                      <button 
+                        key={unit.id}
+                        onClick={() => setSelectedUnit(unit)}
+                        className={`h-32 rounded-[32px] border-2 transition-all duration-500 flex flex-col items-center justify-center relative
+                          ${selectedUnit?.id === unit.id ? 'ring-[10px] ring-[#FFCC00]/30 border-[#FFCC00] bg-white scale-110 z-10 shadow-2xl' : ''}
+                          ${unit.status === 'Occupied' ? 'bg-slate-200 border-slate-300 opacity-40 grayscale' : 'bg-white border-slate-200 hover:border-[#003366]'}
+                        `}
+                        disabled={unit.status === 'Occupied'}
+                      >
+                        <span className="text-[14px] font-black text-[#003366] italic tracking-tighter">{unit.code}</span>
+                        <p className="text-[9px] font-black text-slate-400 uppercase mt-2">{(unit.basePrice/1000000).toFixed(1)}JT</p>
+                      </button>
+                    ))}
+                  </div>
+                </div>
+                <div className="lg:col-span-4">
+                  {selectedUnit ? (
+                    <div className="bg-white p-10 rounded-[48px] border-4 border-[#FFCC00] shadow-2xl animate-slide-up group">
+                        <h4 className="text-5xl font-black text-[#003366] tracking-tighter italic uppercase mb-10">{selectedUnit.code}</h4>
+                        <div className="space-y-5 mb-12 text-[11px] font-bold uppercase tracking-[0.2em] text-slate-500 border-b pb-8">
+                          <div className="flex justify-between"><span>Dimensi</span><span className="text-[#003366] font-black">{selectedUnit.size}</span></div>
+                          <div className="flex justify-between"><span>Sewa / Bln</span><span className="text-[#003366] font-black">Rp {selectedUnit.basePrice.toLocaleString()}</span></div>
+                        </div>
+                        <button onClick={handlePlaceOrder} className="w-full py-5 bg-[#003366] text-white text-[11px] font-black rounded-3xl shadow-xl hover:bg-black transition-all uppercase tracking-[0.3em] active:scale-95">Reservasi & Bayar</button>
+                    </div>
+                  ) : (
+                    <div className="bg-white p-10 rounded-[48px] border-2 border-dashed border-slate-200 flex flex-col items-center justify-center text-center h-full min-h-[480px]">
+                       <Store size={40} className="text-slate-200 mb-6 animate-float" />
+                       <h4 className="font-black text-slate-400 uppercase tracking-[0.3em] text-[12px] leading-relaxed">Pilih Unit Kios</h4>
+                    </div>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'marketplace' && (
+            <div className="animate-slide-up space-y-12">
+               <h2 className="text-3xl font-black text-[#003366] tracking-tighter uppercase italic leading-none">Kios Online</h2>
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-10">
+                 {marketplaces.map(m => (
+                    <div key={m.id} className="bg-white rounded-[48px] border border-slate-100 p-10 shadow-xl hover:shadow-2xl transition-all group flex flex-col sm:flex-row gap-10 items-center">
+                       <div className="w-40 h-40 bg-slate-50 rounded-[40px] flex items-center justify-center text-7xl shadow-inner group-hover:scale-105 transition-transform duration-700">{m.image}</div>
+                       <div className="flex-1 space-y-4 text-center sm:text-left">
+                          <span className="text-[10px] font-black bg-[#003366]/5 text-[#003366] px-4 py-1.5 rounded-full uppercase tracking-widest">{m.category}</span>
+                          <h4 className="text-2xl font-black text-[#003366] uppercase italic tracking-tighter">{m.name}</h4>
+                          <button onClick={handlePlaceOrder} className="w-full mt-6 py-4 bg-[#003366] text-white text-[10px] font-black rounded-xl uppercase tracking-[0.2em] shadow-xl hover:bg-black transition-all flex items-center justify-center gap-3 active:scale-95">
+                            <CreditCard size={16} className="text-[#FFCC00]" /> Pesan & Bayar
+                          </button>
+                       </div>
+                    </div>
+                 ))}
+               </div>
+            </div>
+          )}
+
+          {activeTab === 'academy' && (
+             <div className="space-y-12 animate-slide-up">
+               <div className="bg-[#003366] rounded-[56px] p-12 text-white relative overflow-hidden shadow-2xl border border-white/10 group">
+                <div className="relative z-10 space-y-12">
+                  <div className="bg-[#FFCC00] text-[#003366] text-[10px] font-black px-6 py-2 rounded-full w-fit uppercase tracking-[0.2em] shadow-lg italic">Literasi Finansial</div>
+                  <h2 className="text-6xl font-black tracking-tighter uppercase italic drop-shadow-lg leading-none">Pajak & Modal Strategis</h2>
+                  <div className="text-center bg-white/5 backdrop-blur-md p-8 rounded-[40px] border border-white/10 max-w-xs group-hover:scale-105 transition-transform duration-500">
+                    <p className="text-[10px] font-black uppercase text-blue-300 tracking-[0.2em] mb-1 opacity-70">XP Poin</p>
+                    <p className="text-5xl font-black text-[#FFCC00] italic leading-none tracking-tighter">{xp}</p>
+                  </div>
+                </div>
+                <GraduationCap size={500} className="absolute -right-24 -bottom-24 text-white/5 rotate-12 transition-all duration-[3s] group-hover:scale-110 opacity-30 pointer-events-none" />
+              </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+                {literacyModules.map((course) => (
+                  <div key={course.id} className="group bg-white rounded-[40px] shadow-sm border border-slate-100 overflow-hidden transition-all duration-500 hover:shadow-2xl hover:-translate-y-3 flex flex-col border-l-[12px] border-l-[#003366] cursor-pointer p-10">
+                    <div className="p-5 rounded-[28px] bg-[#003366]/5 group-hover:bg-[#FFCC00]/20 transition-all duration-500 shadow-inner w-fit mb-8"><course.icon size={32} className="text-[#003366]" /></div>
+                    <h4 className="font-black text-[#003366] text-xl tracking-tighter uppercase mb-4 italic transition-all">{course.title}</h4>
+                    <div className="mt-auto flex items-center justify-between pt-6 border-t border-slate-50">
+                      <span className="text-[10px] font-black text-[#003366] uppercase">{course.xp} XP</span>
+                      <button onClick={handlePlaceOrder} className="p-4 rounded-2xl bg-[#003366] text-white hover:bg-black transition-all shadow-xl active:scale-90"><ArrowUpRight size={16} /></button>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'brain' && (
+            <div className="grid grid-cols-1 lg:grid-cols-4 gap-10 h-full animate-slide-up">
+              <div className="lg:col-span-1 space-y-8">
+                <div className="bg-white p-8 rounded-[40px] border border-slate-100 shadow-xl border-t-[12px] border-t-[#003366]">
+                  <h3 className="font-black text-[#003366] mb-10 flex items-center gap-4 tracking-tighter uppercase text-lg italic"><BrainCircuit size={28} /> Inteligensi</h3>
+                  <div className="p-6 bg-blue-50 rounded-[28px] border border-blue-100 italic font-bold text-[#003366] text-xs uppercase tracking-tighter">85% Pembayaran via QRIS terjadi di jam makan siang.</div>
+                </div>
+              </div>
+              <div className="lg:col-span-3 flex flex-col bg-white border border-slate-100 rounded-[56px] shadow-2xl overflow-hidden min-h-[600px] relative p-12">
+                <div className="flex items-center space-x-6 mb-10 border-b pb-8 border-slate-50">
+                    <div className="w-16 h-16 bg-[#003366] rounded-[24px] flex items-center justify-center text-[#FFCC00] shadow-2xl relative animate-float"><BrainCircuit size={36} /></div>
+                    <div><h4 className="font-black text-[#003366] tracking-tighter italic uppercase text-2xl leading-none">AI HBU Assistant</h4></div>
+                </div>
+                <div className="flex-1 space-y-8 overflow-y-auto custom-scrollbar pr-4">
+                   {messages.map((m, i) => (
+                      <div key={i} className={`flex ${m.role === 'user' ? 'justify-end' : 'justify-start'}`}>
+                        <div className={`max-w-[75%] p-8 rounded-[40px] text-[14px] font-semibold shadow-lg ${m.role === 'user' ? 'bg-[#003366] text-white rounded-br-none' : 'bg-white border border-slate-200 text-slate-700 rounded-bl-none border-l-[12px] border-l-[#003366]'}`}>
+                           {m.text}
+                        </div>
+                      </div>
+                   ))}
+                </div>
+              </div>
+            </div>
+          )}
+
+          {activeTab === 'messages' && (
+            <div className="animate-slide-up flex bg-white rounded-[56px] border shadow-2xl overflow-hidden h-[700px]">
+               <div className="w-80 border-r p-10 bg-slate-50/30 flex flex-col">
+                  <h3 className="font-black text-[#003366] text-2xl tracking-tighter uppercase italic mb-12 text-center">Konsultasi</h3>
+                  {contacts.map(c => (
+                    <button key={c.id} onClick={() => setSelectedContact(c)} className={`w-full flex items-center gap-5 p-5 rounded-[32px] transition-all mb-4 ${selectedContact?.id === c.id ? 'bg-[#003366] text-white shadow-2xl scale-105 border-transparent' : 'bg-white border border-slate-100'}`}>
+                      <div className={`w-14 h-14 rounded-[20px] flex items-center justify-center font-bold text-lg ${selectedContact?.id === c.id ? 'bg-white/10' : 'bg-[#003366]/5 text-[#003366]'}`}>{c.avatar}</div>
+                      <div className="text-left overflow-hidden"><p className="text-sm font-black uppercase truncate">{c.name}</p><p className="text-[10px] uppercase opacity-60 tracking-widest">{c.role}</p></div>
+                    </button>
+                  ))}
+               </div>
+               <div className="flex-1 flex flex-col items-center justify-center text-slate-100 bg-white">
+                  <MessageSquare size={120} className="animate-float mb-12 opacity-10" />
+                  <p className="font-black uppercase tracking-[0.4em] text-slate-300 italic">Pilih Partner Konsultasi</p>
+               </div>
+            </div>
+          )}
+
+        </section>
+
+        <footer className="bg-white/90 glass border-t p-6 px-12 flex flex-col sm:flex-row justify-between items-center z-20 shadow-inner">
+           <div className="flex items-center gap-2"><span className="w-2.5 h-2.5 bg-green-500 rounded-full animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.6)]"></span><p className="text-[10px] text-slate-500 font-black uppercase tracking-[0.3em] italic">System Online</p></div>
+           <span className="text-[9px] font-black text-[#003366] bg-[#FFCC00]/20 px-5 py-2 rounded-full uppercase tracking-[0.4em] shadow-inner italic">INTEGRATED v2.8 PRO</span>
+        </footer>
+      </main>
+    </div>
+  );
+};
+
+export default App;
